@@ -1,0 +1,29 @@
+<html lang="es">
+
+	<head>
+		<meta charset="UTF-8">
+		<title>Plantas de energía</title>
+		<link rel="stylesheet" type="text/css" href="styles.css">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap" rel="stylesheet">
+		<script src="https://cdn.jsdelivr.net/npm/minizinc/dist/minizinc.js"></script>
+		<script src="./main.js"></script>
+	</head>
+
+	<body>
+		<section id="app">
+			<h2>Datos</h2>
+			<form class="form" action="#" onsubmit="runModel(event)">
+				<div class="form__control">
+					<label for="form__input--file" class="form__label">Archivo .dzn</label>
+					<input type="file" id="form__input--file" name="form__input--file" accept=".dzn" required>
+				</div>
+				<button type="submit" name="submit" id="submit">Solucionar</button>
+			</form>
+			<div class="results__container">
+			</div>
+		</section>
+	</body>
+
+</html>
