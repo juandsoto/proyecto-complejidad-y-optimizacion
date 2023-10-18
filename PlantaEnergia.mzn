@@ -47,6 +47,8 @@ array[1..m] of var int: ganancia_por_dia;
   constraint forall(i in 1..n)(PT[i] <= CT);
   constraint forall(i in 1..n)(PH[i] <= CH);
   
+  constraint forall(i in 1..n)((PN[i]+PT[i]+PH[i]) = energia_diaria[i]);
+  
   %Mínimos de energia diarios
   
   constraint forall(i in 1..n)(
@@ -70,12 +72,16 @@ array[1..m] of var int: ganancia_por_dia;
 % Objetivo
 var int: ganancia;
 
+
 constraint ganancia = sum(i in 1..n)(
-  sum(s in 1..m)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH* PH[i])))
+  sum(s in 1..m)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH* PH[i])))          
 );
 
 solve maximize ganancia;
 
 output ["ganancia = \(ganancia)\n",
         "energia diaria = \(energia_diaria)\n",
+        "produccion central nuclear = \(PN)\n",
+        "produccion central termica = \(PT)\n",
+        "produccion central hidroelectrica = \(PH)\n",
         "matriz = \(d_aux)\n"];
