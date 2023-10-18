@@ -58,9 +58,10 @@ array[1..m] of var int: ganancia_por_dia;
   constraint forall(i in 1..n)(
     if sum(s in 1..m)(d[s,i]) <= (CN+CT+CH) then
       forall(s in 1..m)(d_aux[s,i]=d[s,i])
-    else
-      forall(s in 1..m)(d_aux[s,i] = d[s,i]*RM)
-    
+    elseif sum(s in 1..m)(d[s,i]*RM) <= (CN+CT+CH) then
+      forall(s in 1..m)(d_aux[s,i] = d[s,i]*RM) 
+      else
+      forall(s in 1..m)(d_aux[s,i] = -1) % se pone '-1' en la matriz si no es capaz de suplir la demanda
     endif
   );
   
