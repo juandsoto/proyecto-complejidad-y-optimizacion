@@ -17,7 +17,8 @@ array[1..n] of var int: PT; % producción de la central termica en un día i
 array[1..n] of var int: PH; % producción de la central hidroelectrica en un día i
 
 %Aux
-array[1..n] of var int: energia_diaria;
+array[1..n] of var int: energia_diaria; % arreglo de la cantidad de energía total diaria(suma de todos los clientes)
+array[1..m, 1..n] of var int: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
 array[1..m] of var int: ganancia_por_dia;
 
 % Restricciones
@@ -39,6 +40,7 @@ array[1..m] of var int: ganancia_por_dia;
   
   constraint assert(RM <=1, "El requerimiento mínimo debe ser un valor entre 0 y 1");
   
+  
   %Capacidades 
   
   constraint forall(i in 1..n)(PN[i] <= CN);
@@ -48,35 +50,31 @@ array[1..m] of var int: ganancia_por_dia;
   %Mínimos de energia diarios
   
   constraint forall(i in 1..n)(
-    energia_diaria[i] = sum(s in 1..m)(d[s,i])
+    energia_diaria[i] = sum(s in 1..m)(d_aux[s,i])
   );
       
   %Suplir la demanda diaria
   
   constraint forall(i in 1..n)(
-    if energia_diaria[i] <= (CN+CT+CH) then
-      true
-    elseif energia_diaria[i]*RM <= (CN+CT+CH) then
-      forall(s in 1..m)(d[s,i] = d[s,i]*RM)
-    else false
+    if sum(s in 1..m)(d[s,i]) <= (CN+CT+CH) then
+      forall(s in 1..m)(d_aux[s,i]=d[s,i])
+    else
+      forall(s in 1..m)(d_aux[s,i] = d[s,i]*RM)
+    
     endif
   );
+  
+  
 
 % Objetivo
 var int: ganancia;
 
 constraint ganancia = sum(i in 1..n)(
-  sum(s in 1..m)((d[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH* PH[i])))
+  sum(s in 1..m)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH* PH[i])))
 );
 
 solve maximize ganancia;
 
 output ["ganancia = \(ganancia)\n",
         "energia diaria = \(energia_diaria)\n",
-        "matriz = \(d)\n"];
-
-
-
-
-
-
+        "matriz = \(d_aux)\n"];
