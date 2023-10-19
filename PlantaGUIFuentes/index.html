@@ -13,28 +13,67 @@
 
 	<body>
 		<section id="app">
-			<h2>Datos</h2>
-			<form class="form" action="#" onsubmit="runModel(event)">
+			<div class="title__section">
+				<h2>Datos</h2>
+				<button id="toggle" class="toggle__button" onclick="toggleForm()">Manual</button>
+			</div>
+			<form id="manual__form" class="form-container hidden" action="#" onsubmit="runModelWithForm(event)">
+				<div class="form__control">
+					<label for="CN" class="form-label">CN (Capacidad central nuclear):</label>
+					<input type="number" name="CN" id="CN" class="form-input" min="0" value="1000">
+				</div>
+				<div class="form__control">
+					<label for="CT" class="form-label">CT (Capacidad central térmica):</label>
+					<input type="number" name="CT" id="CT" class="form-input" min="0" value="300">
+				</div>
+				<div class="form__control">
+					<label for="CH" class="form-label">CH (Capacidad central hidroeléctrica):</label>
+					<input type="number" name="CH" id="CH" class="form-input" min="0" value="500">
+				</div>
+				<div class="form__control">
+
+					<label for="m" class="form-label">m (Cantidad de clientes):</label>
+					<input type="number" name="m" id="m" class="form-input" min="0" value="3">
+				</div>
+				<div class="form__control">
+					<label for="n" class="form-label">n (Cantidad de dias):</label>
+					<input type="number" name="n" id="n" class="form-input" min="0" value="2">
+				</div>
+				<div class="form__control">
+					<label for="CPN" class="form-label">CPN (Costo de producción nuclear):</label>
+					<input type="number" name="CPN" id="CPN" class="form-input" min="0" value="4">
+				</div>
+				<div class="form__control">
+					<label for="CPT" class="form-label">CPT (Costo de producción térmica):</label>
+					<input type="number" name="CPT" id="CPT" class="form-input" min="0" value="2">
+				</div>
+				<div class="form__control">
+					<label for="CPH" class="form-label">CPH (Costo de producción hidroeléctrica):</label>
+					<input type="number" name="CPH" id="CPH" class="form-input" min="0" value="3">
+				</div>
+				<div class="form__control">
+					<label for="RM" class="form-label">RM (Requerimiento mínimo):</label>
+					<input type="number" step="0.01" name="RM" id="RM" class="form-input" min="0" max="1" value="0.5">
+				</div>
+				<div class="form__control">
+					<label for="P" class="form-label">P (Cobro de cliente por megawatt):</label>
+					<input type="text" name="P" id="P" class="form-input" min="0" value="15,25,20">
+				</div>
+				<div class="form__control span-full">
+					<label for="d" class="form-label">d (Demanda diaria):</label>
+					<textarea name="d" id="d" class="form-textarea"></textarea>
+				</div>
+				<input type="submit" value="Enviar" class="button span-full">
+			</form>
+			<form id="automatic__form" class="form" action="#" onsubmit="runModel(event)">
 				<div class="form__control">
 					<label for="form__input--file" class="form__label">Archivo .dzn</label>
 					<input type="file" id="form__input--file" name="form__input--file" accept=".dzn" required>
 				</div>
 				<button type="submit" name="submit" id="submit">Solucionar</button>
 			</form>
-			<div class="results__container">
-				<ul>
-					<li><strong>PN:</strong> <span id="pn"></span></li>
-					<li><strong>PT:</strong> <span id="pt"></span></li>
-					<li><strong>PH:</strong> <span id="ph"></span></li>
-					<li><strong>energia_diaria:</strong> <span id="energia_diaria"></span></li>
-					<li><strong>d_aux:</strong>
-						<table id="d_aux_table">
-							<!-- Table content will be generated dynamically -->
-						</table>
-					</li>
-					<li><strong>ganancia:</strong> <span id="ganancia"></span></li>
-				</ul>
-			</div>
+			<div class="loader hidden">Cargando...</div>
+			<div class="results__container"></div>
 		</section>
 	</body>
 

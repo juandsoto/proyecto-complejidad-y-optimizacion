@@ -80,9 +80,48 @@ constraint ganancia = sum(s in 1..m)(
 solve maximize ganancia;
 `;
 
+function toggleForm() {
+	const $manual = document.getElementById('manual__form');
+	const $automatic = document.getElementById('automatic__form');
+	const $toggle = document.getElementById('toggle');
+	if ($manual.classList.contains('hidden')) {
+		$manual.classList.remove('hidden');
+		$automatic.classList.add('hidden');
+		$toggle.textContent = 'Automatico';
+	} else {
+		$automatic.classList.remove('hidden');
+		$manual.classList.add('hidden');
+		$toggle.textContent = 'Manual';
+
+	}
+}
+
 let instancesRunning = 0;
 
 
+async function runModelWithForm(event) {
+	event.preventDefault();
+
+	if (instancesRunning > 0) {
+		window.alert("Espera a que el programa termine su ejecución antes de ejecutarlo de nuevo");
+		return;
+	}
+
+	instancesRunning += 1;
+	const $results = document.querySelector(".results__container");
+	$results.innerHTML = null;
+
+	const data = getFormData();
+
+	try {
+		model = await readModel(data);
+		solveModel(model);
+
+	} catch (e) {
+		instancesRunning = 0;
+		console.error(e);
+	}
+}
 async function runModel(event) {
 	event.preventDefault();
 
@@ -92,11 +131,8 @@ async function runModel(event) {
 	}
 
 	instancesRunning += 1;
-	const $results = document.querySelector(".results__container div");
-
-	if ($results) {
-		$results.remove();
-	}
+	const $results = document.querySelector(".results__container");
+	$results.innerHTML = null;
 
 	const $fileInput = document.getElementById("form__input--file");
 	const data = await $fileInput.files[0].text();
@@ -112,7 +148,6 @@ async function runModel(event) {
 }
 
 async function readModel(data) {
-	//let res = translateInput(data);
 
 	const model = new MiniZinc.Model();
 
@@ -129,14 +164,11 @@ function solveModel(model) {
 			'all-solutions': true,
 		}
 	});
-	const $resultsContainer = document.querySelector(".results__container");
-	const $results = document.createElement('div');
-
-	$results.innerText = 'Cargando...';
-
-	$resultsContainer.appendChild($results);
+	const $loader = document.querySelector(".loader");
+	$loader.classList.remove('hidden');
 
 	solve.on('error', e => {
+		$loader.classList.add('hidden');
 		console.error(e);
 		try {
 			solve.cancel();
@@ -148,28 +180,24 @@ function solveModel(model) {
 
 
 	solve.then(result => {
+		$loader.classList.add('hidden');
 		instancesRunning = 0;
 		const solution = result.solution.output.json;
-		console.log(solution);
-		$results.innerHTML = `
-		<h2>Resultados</h2>
-		`;
 		renderResults(solution);
 	});
-
 }
 
 function renderResults(data) {
+	const $results = document.querySelector(".results__container");
 
-	function renderArrayAsText(array) {
-		return `[${array.join(', ')}]`;
-	}
-
-	document.getElementById('pn').textContent = renderArrayAsText(data.PN);
-	document.getElementById('pt').textContent = renderArrayAsText(data.PT);
-	document.getElementById('ph').textContent = renderArrayAsText(data.PH);
-	document.getElementById('energia_diaria').textContent = renderArrayAsText(data.energia_diaria);
-
+	$results.innerHTML = `
+		<h2>Resultados</h2>
+		<div class="ganancia__container">
+			<span><strong>GANANCIA: </strong></span><span id="ganancia"></span>
+		</div>
+		<h3>Tabla de demanda diaria</h3>
+		<table id="d_aux_table"></table>
+	`;
 
 	const dAuxTable = document.getElementById('d_aux_table');
 
@@ -194,7 +222,8 @@ function renderResults(data) {
 
 	// Add a footer row to calculate column sums
 	const footerRow = dAuxTable.insertRow();
-	footerRow.insertCell("TOTAL"); // Empty cell for the corner
+	footerRow.classList.add('highlighted');
+	footerRow.insertCell(); // Empty cell for the corner
 	for (let col = 0; col < data.d_aux[0].length; col++) {
 		const sum = data.d_aux.reduce((acc, subArray) => acc + subArray[col], 0);
 		const footerCell = footerRow.insertCell();
@@ -202,5 +231,55 @@ function renderResults(data) {
 	}
 	footerRow.cells[0].textContent = "TOTAL";
 
-	document.getElementById('ganancia').textContent = data.ganancia;
+	const PNRow = dAuxTable.insertRow();
+	PNRow.insertCell();
+	data.PN.forEach(day => {
+		PNCell = PNRow.insertCell();
+		PNCell.textContent = day;
+	});
+	PNRow.cells[0].textContent = "Producción central nuclear";
+
+	const PTRow = dAuxTable.insertRow();
+	PTRow.insertCell();
+	data.PT.forEach(day => {
+		PNCell = PTRow.insertCell();
+		PNCell.textContent = day;
+	});
+	PTRow.cells[0].textContent = "Producción central térmica";
+
+	const PHRow = dAuxTable.insertRow();
+	PHRow.insertCell();
+	data.PH.forEach(day => {
+		PNCell = PHRow.insertCell();
+		PNCell.textContent = day;
+	});
+	PHRow.cells[0].textContent = "Producción central hidroeléctrica";
+
+	const $ganancia = document.getElementById('ganancia');
+	$ganancia.textContent = data.ganancia;
+}
+
+function getFormData() {
+	const CN = document.getElementById("CN").value;
+	const CT = document.getElementById("CT").value;
+	const CH = document.getElementById("CH").value;
+	const m = document.getElementById("m").value;
+	const n = document.getElementById("n").value;
+	const CPN = document.getElementById("CPN").value;
+	const CPT = document.getElementById("CPT").value;
+	const CPH = document.getElementById("CPH").value;
+	const RM = document.getElementById("RM").value;
+	const P = document.getElementById("P").value;
+	const d = document.getElementById("d").value;
+
+	const lines = d.split('\n');
+	let formatted = `d=[|\n`;
+	for (const line of lines) {
+		formatted += `${line.trim()}|`;
+	}
+	formatted += '];\n';
+
+	const dataString = `CN=${CN};\nCT=${CT};\nCH=${CH};\nm=${m};\nn=${n};\nCPN=${CPN};\nCPT=${CPT};\nCPH=${CPH};\nRM=${RM};\nP=[${P}];\n${formatted}`;
+
+	return dataString;
 }
