@@ -1,129 +1,83 @@
 const modelSpecification = `
-%parameters
-int: n; %number of total teams
-constraint assert( n > 0, "Error: Debe haber por lo menos dos equipos");
-constraint assert( n mod 2 == 0, "Error: El numero de equipos debe ser par");
+% Lectura de Datos
+int: CN; % capacidad central nuclear
+int: CT; % capacidad central termica
+int: CH; % capacidad central hidroelectrica
+int: m;  % cantidad de clientes
+int: n;  % cantidad de días a planificar
+int: CPN; %costo de producción de la central nuclear.
+int: CPT; %costo de producción de la central térmica.
+int: CPH; %costo de producción de la central hidroeléctrica.
+float: RM; %porcentaje de requerimiento mínimo
+array[1..m] of int: P;  %arreglo que representa el pago de cada cliente s
+array[1..m, 1..n] of int: d;  %matriz de demanda diaria
 
-int: min;
-int: max;
-constraint assert( min > 0, "Error: el minimo de tour o permanencia debe ser mayor que 0");
-constraint assert( max > 0, "Error: el maximo de tour o permanencia debe ser mayor que 0");
-constraint assert( min < max, "Error: el maximo de tour o permanencia debe ser mayor que el minimo de tour o permanencia");
+% Variables
+array[1..n] of var int: PN; % producción de la central nuclear en un día i
+array[1..n] of var int: PT; % producción de la central termica en un día i
+array[1..n] of var int: PH; % producción de la central hidroelectrica en un día i
 
-array[1..n, 1..n] of int: d; %matriz of distances between teams
+%Aux
+array[1..n] of var int: energia_diaria; % arreglo de la cantidad de energía total diaria(suma de todos los clientes)
+array[1..m, 1..n] of var int: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
 
-int: number_of_dates = 2*(n-1);
+% Restricciones
 
-%variables
-array[1..2*(n-1), 1..n] of var -n..n: Cal; %matriz of calendar
-set of int: values = 1..n;
-
-% If one team play as visitor the rival is a local and if plays as local the rival is a visitor
-constraint forall(j, k in 1..n, i in 1..number_of_dates) (
-  ((Cal[i,j] = k) -> (Cal[i,k] = -j)) /\\ ((Cal[i,k] = -j) -> (Cal[i,j] = k))
-);
-
-% All posible values in calendar are existing teams
-constraint forall(i in 1..number_of_dates) (
-forall(j in 1..n) (
-    abs(Cal[i,j]) in values
-  )
-);
-
-% There is not two same games in a row
-constraint forall(i in 1..(number_of_dates-1)) (
-  forall(j in 1..n) (
-    abs(Cal[i,j]) != abs(Cal[i+1,j]) 
-  )
-);
-
-% Add constraints for maximum permanence and maximum tour
-constraint forall (p in 1..n) (forall(i in 1..number_of_dates-(max))(
-  (sum(j in i..i+max) (if Cal[j, p] > 0 then 
-  1 
-  else 
-  0 
-  endif) <= max) /\\
-  (sum(j in i..i+max) (if Cal[j, p] < 0 then
-  1 
-  else 
-  0 endif) <= max)
-  )
-);    
-
-% Add constraints for minimum permanence or minimun tour 
-constraint forall(team in 1..n, date in 1..number_of_dates)(
-    exists(dateOne in 1..number_of_dates, 
-           dateTwo in 1..number_of_dates where 
-           (dateOne <= date) /\\ 
-           (dateTwo >= date)
-        )
-        (
-        dateTwo - dateOne + 1 >= min
-        /\\
-        forall(inRangeDate in dateOne..dateTwo)(
-          Cal[inRangeDate, team] > 0
-        )  
-        \\/
-        forall(inRangeDate in dateOne..dateTwo)(
-          Cal[inRangeDate, team] < 0
-        )
-    )
-);
-
-
-% for each team there has to be two matches, one as visitor and other as local
-constraint forall(team in values)(
-      forall(k in values where k != team)(
-            exists(dateOne in 1..number_of_dates, dateTwo in 1..number_of_dates)(
-              (Cal[dateOne,team] == k) /\\
-              (Cal[dateTwo,team] == -1*k)
-            )
-      )
-);
-
-% On each day half of the teams has to play as visitors a the other half as locals
-constraint forall(i in 1..number_of_dates) (
-  (sum(j in 1..n)(if Cal[i, j] < 0 then 
-  1 
-  else 
-  0 endif) == n/2) /\\
-  (sum(j in 1..n)(if Cal[i, j] > 0 then 
-  1 
-  else 
-  0 endif) == n/2)
-);
-
-var int: total_cost;
-constraint total_cost = sum(i in 1..number_of_dates, t in 1..n)( 
-  if i+1 <= number_of_dates then
+  %No negatividad
+  constraint assert(CN >= 0, "La capacidad de la central nuclear debe ser mayor a 0");
+  constraint assert(CT >= 0, "La capacidad de la central térmica debe ser mayor a 0");
+  constraint assert(CH >= 0, "La capacidad de la central hidroeléctrica debe ser mayor a 0");
+  constraint assert(m >= 0, "Debe haber por lo menos 1 cliente");
+  constraint assert(n >= 0, "Debe haber por lo menos 1 dia");
+  constraint assert(RM >= 0, "El requerimiento mínimo debe ser un valor entre 0 y 1");
+  constraint forall(i in 1..n)(PN[i] >= 0);
+  constraint forall(i in 1..n)(PT[i] >= 0);
+  constraint forall(i in 1..n)(PH[i] >= 0);
+  constraint forall(s in 1..m)(P[s] >= 0);
+  constraint forall(i in 1..n)(forall(s in 1..m)(d[s,i] >= 0));
+  
+  %Porcentaje satisfactibilidad
+  
+  constraint assert(RM <=1, "El requerimiento mínimo debe ser un valor entre 0 y 1");
+  
+  
+  %Capacidades 
+  
+  constraint forall(i in 1..n)(PN[i] <= CN);
+  constraint forall(i in 1..n)(PT[i] <= CT);
+  constraint forall(i in 1..n)(PH[i] <= CH);
+  
+  %Mínimos de energia diarios
+  
+  constraint forall(i in 1..n)(
+    energia_diaria[i] = sum(s in 1..m)(d_aux[s,i])
+  );
     
-    if (Cal[i, t] < 0) /\\ (Cal[i+1, t] < 0) then
-      d[abs(Cal[i,t]), 
-      abs(Cal[i+1, t])]
+  constraint forall(i in 1..n)((PN[i]+PT[i]+PH[i]) = energia_diaria[i]);
       
-    elseif (Cal[i, t] < 0) /\\ (Cal[i+1, t] > 0) then
-      d[t, abs(Cal[i, t])]
-      
-    elseif (Cal[i+1, t] < 0) then 
-      d[t, abs(Cal[i+1, t])]
-      
-    else
-      d[t,t]
-      
+  %Suplir la demanda diaria
+  
+  constraint forall(i in 1..n)(
+    if sum(s in 1..m)(d[s,i]) <= (CN+CT+CH) then
+      forall(s in 1..m)(d_aux[s,i]=d[s,i])
+    elseif sum(s in 1..m)(d[s,i]*RM) <= (CN+CT+CH) then
+      forall(s in 1..m)(d_aux[s,i] = d[s,i]*RM) 
+      else
+      forall(s in 1..m)(d_aux[s,i] = -1) % se pone '-1' en la matriz si no es capaz de suplir la demanda
     endif
-  elseif Cal[i, t] < 0 then
-      d[t, abs(Cal[i, t])]
-  else
-    d[t,t] 
- endif
-) + sum(t in 1..n)(
-  if Cal[1, t] < 0 then 
-  d[t, abs(Cal[1, t])] 
-  else d[t,t] 
-  endif );
+  );
+  
+  
 
-solve minimize total_cost;
+% Objetivo
+var int: ganancia;
+
+
+constraint ganancia = sum(s in 1..m)(
+  sum(i in 1..n)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH*PH[i])))          
+);
+
+solve maximize ganancia;
 `;
 
 let instancesRunning = 0;
@@ -144,8 +98,11 @@ async function runModel(event) {
 		$results.remove();
 	}
 
+	const $fileInput = document.getElementById("form__input--file");
+	const data = await $fileInput.files[0].text();
+
 	try {
-		model = await readModel();
+		model = await readModel(data);
 		solveModel(model);
 
 	} catch (e) {
@@ -154,15 +111,12 @@ async function runModel(event) {
 	}
 }
 
-async function readModel() {
-	const $fileInput = document.getElementById("form__input--file");
-	const modelData = await $fileInput.files[0].text();
-
-	let res = translateInput(modelData);
+async function readModel(data) {
+	//let res = translateInput(data);
 
 	const model = new MiniZinc.Model();
 
-	model.addDznString(res);
+	model.addDznString(data);
 	model.addFile('model.mzn', modelSpecification);
 
 	return model;
@@ -171,7 +125,7 @@ async function readModel() {
 function solveModel(model) {
 	const solve = model.solve({
 		options: {
-			solver: 'gecode',
+			solver: 'coin-bc',
 			'all-solutions': true,
 		}
 	});
@@ -195,95 +149,58 @@ function solveModel(model) {
 
 	solve.then(result => {
 		instancesRunning = 0;
+		const solution = result.solution.output.json;
+		console.log(solution);
 		$results.innerHTML = `
 		<h2>Resultados</h2>
-		<p>Pronto!</p>
 		`;
+		renderResults(solution);
 	});
 
 }
 
-function translateInput(input) {
-	input = input.trim();
-	let rows = input.split(/\r\n|\n/);
+function renderResults(data) {
 
-	for (let i = 0; i < rows.length; i++) {
-		rows[i] = rows[i].trim();
+	function renderArrayAsText(array) {
+		return `[${array.join(', ')}]`;
 	}
 
-	let getValues = [];
+	document.getElementById('pn').textContent = renderArrayAsText(data.PN);
+	document.getElementById('pt').textContent = renderArrayAsText(data.PT);
+	document.getElementById('ph').textContent = renderArrayAsText(data.PH);
+	document.getElementById('energia_diaria').textContent = renderArrayAsText(data.energia_diaria);
 
-	for (let i = 0; i < 3; i++) {
-		let number = isCorrectInt(rows[i]);
-		getValues.push(number);
+
+	const dAuxTable = document.getElementById('d_aux_table');
+
+	// Add column headers
+	const colHeaderRow = dAuxTable.insertRow();
+	colHeaderRow.insertCell(); // Empty cell for the corner
+	for (let col = 0; col < data.d_aux[0].length; col++) {
+		const colHeaderCell = colHeaderRow.insertCell();
+		colHeaderCell.textContent = `dia ${col + 1}`;
 	}
 
-	let numberOfTeams = isCorrectInt(getValues[0]);
+	// Add row labels and data
+	data.d_aux.forEach((subArray, rowIndex) => {
+		const row = dAuxTable.insertRow();
+		const rowHeaderCell = row.insertCell();
+		rowHeaderCell.textContent = `cliente ${rowIndex + 1}`;
+		subArray.forEach(value => {
+			const cell = row.insertCell();
+			cell.textContent = value;
+		});
+	});
 
-	let teamsCosts = getDistance(rows, numberOfTeams);
-
-	return translateInputs(getValues, teamsCosts);
-}
-
-
-function isCorrectInt(input) {
-	let number = parseInt(input);
-	if (!Number.isInteger(number) || number < 0) {
-		return "Invalid format";
+	// Add a footer row to calculate column sums
+	const footerRow = dAuxTable.insertRow();
+	footerRow.insertCell("TOTAL"); // Empty cell for the corner
+	for (let col = 0; col < data.d_aux[0].length; col++) {
+		const sum = data.d_aux.reduce((acc, subArray) => acc + subArray[col], 0);
+		const footerCell = footerRow.insertCell();
+		footerCell.textContent = sum;
 	}
-	return number;
-}
+	footerRow.cells[0].textContent = "TOTAL";
 
-function getDistance(rows, numberOfTeams) {
-	costs = [];
-
-	for (let i = 3; i < rows.length; i++) {
-		let row = rows[i];
-
-		let columns = row.split(" ");
-		if (columns.length < numberOfTeams) {
-			console.log('Invalid format');
-		}
-
-		let costsRow = [];
-		for (let j = 0; j < columns.length; j++) {
-			let number = isCorrectInt(columns[j]);
-
-			costsRow.push(number);
-		}
-
-		costs.push(costsRow);
-	}
-
-	return costs;
-}
-
-function createArrayString(array) {
-	let arrayString = `[`;
-
-	for (let i = 0; i < array.length; i++) {
-		const row = array[i];
-
-		let rowValue = `|`;
-		for (let j = 0; j < row.length; j++) {
-			const col = row[j];
-			rowValue += ` ${col},`;
-		}
-
-		rowValue += '\n';
-		arrayString += rowValue;
-	}
-
-	arrayString += '|]';
-	return arrayString;
-}
-
-function translateInputs(threeFirstRows, costs) {
-	const distancePerTeam = createArrayString(costs);
-
-	return `n = ${threeFirstRows[0]};
-      min = ${threeFirstRows[1]};
-      max = ${threeFirstRows[2]};
-      d = ${distancePerTeam};
-      `;
+	document.getElementById('ganancia').textContent = data.ganancia;
 }
