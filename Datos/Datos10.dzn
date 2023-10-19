@@ -1,0 +1,21 @@
+CN = 200;          % Capacidad nuclear
+CT = 100;          % Capacidad térmica
+CH = 3210;         % Capacidad hidroeléctrica
+m = 8;             % Cantidad de clientes
+n = 8;             % Cantidad de días a planificar
+CPN = 9;           % Costo de producción de la central nuclear
+CPT = 8;           % Costo de producción de la central térmica
+CPH = 12;          % Costo de producción de la central hidroeléctrica
+RM = 0.6;          % Porcentaje de requerimiento mínimo
+
+P = [150, 220, 70, 90, 200, 180, 140, 60];  % Pagos de clientes
+
+% Matriz de demanda diaria
+d = [|520,340,680,820,920,720,550,680|
+    580,240,600,420,580,720,790,690|
+    740,720,680,690,570,680,920,590|
+    380,690,420,480,490,600,810,720|
+    560,740,580,890,850,440,620,560|
+    720,480,510,540,720,690,820,720|
+    520,340,680,820,920,720,550,680|
+    580,240,600,420,580,720,790,690|];
