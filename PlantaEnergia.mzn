@@ -19,6 +19,10 @@ array[1..n] of var int: PH; % producción de la central hidroelectrica en un dí
 %Aux
 array[1..n] of var int: energia_diaria; % arreglo de la cantidad de energía total diaria(suma de todos los clientes)
 array[1..m, 1..n] of var float: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
+array[1..m] of var int: pagos;
+array[1..3] of var int: costo_central;
+array[1..3] of var int: capacidad_centrales;
+var float: RM_aux;
 
 % Restricciones
 
@@ -65,16 +69,25 @@ array[1..m, 1..n] of var float: d_aux; % matriz auxiliar de la demanda diaria; s
       forall(s in 1..m)(d_aux[s,i] = -1) % se pone '-1' en la matriz si no es capaz de suplir la demanda
     endif
   );
-  
-  
+
+%variables para mostrar en el output
+constraint forall(s in 1..m)(
+	pagos[s] = P[s]
+);
+
+constraint costo_central = [CPN,CPT,CPH];
+
+constraint capacidad_centrales = [CN,CT,CH];
+
+constraint RM_aux = RM;
 
 % Objetivo
 var float: ganancia;
 
 constraint ganancia >= 0;
 
-constraint ganancia = sum(s in 1..m)(
-  sum(i in 1..n)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH*PH[i])))          
+constraint ganancia = sum(i in 1..n)(
+  sum(s in 1..m)(d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH*PH[i]))        
 );
 
 solve maximize ganancia;

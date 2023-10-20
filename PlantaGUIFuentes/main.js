@@ -19,7 +19,11 @@ array[1..n] of var int: PH; % producción de la central hidroelectrica en un dí
 
 %Aux
 array[1..n] of var int: energia_diaria; % arreglo de la cantidad de energía total diaria(suma de todos los clientes)
-array[1..m, 1..n] of var int: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
+array[1..m, 1..n] of var float: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
+array[1..m] of var int: pagos;
+array[1..3] of var int: costo_central;
+array[1..3] of var int: capacidad_centrales;
+var float: RM_aux;
 
 % Restricciones
 
@@ -66,15 +70,25 @@ array[1..m, 1..n] of var int: d_aux; % matriz auxiliar de la demanda diaria; se 
       forall(s in 1..m)(d_aux[s,i] = -1) % se pone '-1' en la matriz si no es capaz de suplir la demanda
     endif
   );
-  
-  
+
+%variables para mostrar en el output
+constraint forall(s in 1..m)(
+	pagos[s] = P[s]
+);
+
+constraint costo_central = [CPN,CPT,CPH];
+
+constraint capacidad_centrales = [CN,CT,CH];
+
+constraint RM_aux = RM;
 
 % Objetivo
-var int: ganancia;
+var float: ganancia;
 
+constraint ganancia >= 0;
 
-constraint ganancia = sum(s in 1..m)(
-  sum(i in 1..n)((d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH*PH[i])))          
+constraint ganancia = sum(i in 1..n)(
+  sum(s in 1..m)(d_aux[s,i]*P[s]) - ((CPN*PN[i])+(CPT*PT[i])+(CPH*PH[i]))        
 );
 
 solve maximize ganancia;
@@ -188,12 +202,19 @@ function solveModel(model) {
 }
 
 function renderResults(data) {
+	console.log(data);
 	const $results = document.querySelector(".results__container");
 
 	$results.innerHTML = `
 		<h2>Resultados</h2>
-		<div class="ganancia__container">
+		<div class="data__container">
 			<span><strong>GANANCIA: </strong></span><span id="ganancia"></span>
+		</div>
+		<div class="data__container">
+			<span><strong>CAPACIDADES: </strong></span><span id="capacidades"></span>
+		</div>
+		<div class="data__container">
+			<span><strong>REQUERIMIENTO MÍNIMO: </strong></span><span id="rm"></span>
 		</div>
 		<h3>Tabla de demanda diaria</h3>
 		<table id="d_aux_table"></table>
@@ -208,55 +229,133 @@ function renderResults(data) {
 		const colHeaderCell = colHeaderRow.insertCell();
 		colHeaderCell.textContent = `dia ${col + 1}`;
 	}
+	const columnaCostoPorMegawatt = colHeaderRow.insertCell();
+	columnaCostoPorMegawatt.textContent = 'costo por megawatt';
+	const columnaCostoTotal = colHeaderRow.insertCell();
+	columnaCostoTotal.textContent = 'costo total';
 
+	let totalDeTodosLosPagos = 0;
+	let totalCostoCentrales = 0;
 	// Add row labels and data
 	data.d_aux.forEach((subArray, rowIndex) => {
+		let totalPagosPorCliente = 0;
 		const row = dAuxTable.insertRow();
 		const rowHeaderCell = row.insertCell();
 		rowHeaderCell.textContent = `cliente ${rowIndex + 1}`;
 		subArray.forEach(value => {
 			const cell = row.insertCell();
+			totalPagosPorCliente += value;
 			cell.textContent = value;
 		});
+		const pagoPorMegawatt = row.insertCell();
+		pagoPorMegawatt.textContent = data.pagos[rowIndex];
+		const pagoCliente = row.insertCell();
+		const pago = totalPagosPorCliente * data.pagos[rowIndex];
+		pagoCliente.textContent = pago;
+		totalDeTodosLosPagos += pago;
 	});
 
-	// Add a footer row to calculate column sums
+	//TOTAL MEGAWATTS DIARIOS
+	const megawattsDiarios = dAuxTable.insertRow();
+	megawattsDiarios.insertCell(); // Empty cell for the corner
+	for (let col = 0; col < data.d_aux[0].length; col++) {
+		const sum = data.d_aux.reduce((acc, subArray) => acc + subArray[col], 0);
+		const cell = megawattsDiarios.insertCell();
+		cell.textContent = sum;
+	}
+	megawattsDiarios.insertCell();
+	megawattsDiarios.insertCell();
+
+	megawattsDiarios.cells[0].textContent = "TOTAL MEGAWATTS DIARIOS";
+
+	//TOTAL INGRESOS
 	const footerRow = dAuxTable.insertRow();
 	footerRow.classList.add('highlighted');
 	footerRow.insertCell(); // Empty cell for the corner
 	for (let col = 0; col < data.d_aux[0].length; col++) {
-		const sum = data.d_aux.reduce((acc, subArray) => acc + subArray[col], 0);
-		const footerCell = footerRow.insertCell();
-		footerCell.textContent = sum;
+		footerRow.insertCell();
 	}
-	footerRow.cells[0].textContent = "TOTAL";
+	footerRow.insertCell();
+	const pagoTotalCliente = footerRow.insertCell();
+	pagoTotalCliente.textContent = totalDeTodosLosPagos;
+	footerRow.cells[0].textContent = "TOTAL INGRESOS";
 
+	//CENTRAL NUCLEAR
 	const PNRow = dAuxTable.insertRow();
 	PNRow.insertCell();
+	let totalNuclear = 0;
 	data.PN.forEach(day => {
 		PNCell = PNRow.insertCell();
+		totalNuclear += day;
 		PNCell.textContent = day;
 	});
+	PNRow.insertCell().textContent = data.costo_central[0];
+	const totalCostoNuclear = PNRow.insertCell();
+	totalCostoNuclear.textContent = totalNuclear * data.costo_central[0];
+	totalCostoCentrales += totalNuclear * data.costo_central[0];
 	PNRow.cells[0].textContent = "Producción central nuclear";
 
+	//CENTRAL TERMICA
 	const PTRow = dAuxTable.insertRow();
 	PTRow.insertCell();
+	let totalTermica = 0;
 	data.PT.forEach(day => {
 		PNCell = PTRow.insertCell();
+		totalTermica += day;
 		PNCell.textContent = day;
 	});
+	PTRow.insertCell().textContent = data.costo_central[1];
+	const totalCostoTermica = PTRow.insertCell();
+	totalCostoTermica.textContent = totalTermica * data.costo_central[1];
+	totalCostoCentrales += totalTermica * data.costo_central[1];
 	PTRow.cells[0].textContent = "Producción central térmica";
 
+	//CENTRAL HIDROELECTRICA
 	const PHRow = dAuxTable.insertRow();
 	PHRow.insertCell();
+	let totalHidroelectrica = 0;
 	data.PH.forEach(day => {
 		PNCell = PHRow.insertCell();
+		totalHidroelectrica += day;
 		PNCell.textContent = day;
 	});
+	PHRow.insertCell().textContent = data.costo_central[2];
+	const totalCostoHidroelectrica = PHRow.insertCell();
+	totalCostoHidroelectrica.textContent = totalHidroelectrica * data.costo_central[2];
+	totalCostoCentrales += totalHidroelectrica * data.costo_central[2];
 	PHRow.cells[0].textContent = "Producción central hidroeléctrica";
+
+	//TOTAL MEGAWATTS DIARIOS
+	const produccionDiaria = dAuxTable.insertRow();
+	produccionDiaria.insertCell(); // Empty cell for the corner
+	for (let col = 0; col < data.d_aux[0].length; col++) {
+		const sum = data.PN[col] + data.PT[col] + data.PH[col];
+		const cell = produccionDiaria.insertCell();
+		cell.textContent = sum;
+	}
+	produccionDiaria.insertCell();
+	produccionDiaria.insertCell();
+	produccionDiaria.cells[0].textContent = "TOTAL PRODUCCIÓN DIARIA";
+
+	//TOTAL EGRESOS
+	const totalEgresos = dAuxTable.insertRow();
+	totalEgresos.classList.add('highlighted');
+	totalEgresos.insertCell(); // Empty cell for the corner
+	for (let col = 0; col < data.d_aux[0].length; col++) {
+		totalEgresos.insertCell();
+	}
+	totalEgresos.insertCell();
+	totalEgresos.insertCell().textContent = totalCostoCentrales;
+	totalEgresos.cells[0].textContent = "TOTAL EGRESOS";
 
 	const $ganancia = document.getElementById('ganancia');
 	$ganancia.textContent = data.ganancia;
+
+	const $capacidades = document.getElementById('capacidades');
+	$capacidades.textContent = JSON.stringify(data.capacidad_centrales);
+
+	const $rm = document.getElementById('rm');
+	$rm.textContent = JSON.stringify(data.RM_aux);
 }
 
 function getFormData() {
