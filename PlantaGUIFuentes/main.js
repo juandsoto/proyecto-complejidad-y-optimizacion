@@ -147,6 +147,8 @@ async function runModel(event) {
 	instancesRunning += 1;
 	const $results = document.querySelector(".results__container");
 	$results.innerHTML = null;
+	const $error = document.querySelector(".error");
+	$error.classList.add('hidden');
 
 	const $fileInput = document.getElementById("form__input--file");
 	const data = await $fileInput.files[0].text();
@@ -184,6 +186,9 @@ function solveModel(model) {
 	solve.on('error', e => {
 		$loader.classList.add('hidden');
 		console.error(e);
+		const $error = document.querySelector(".error");
+		$error.classList.remove('hidden');
+		$error.textContent = e.message;
 		try {
 			solve.cancel();
 		} catch (e) {
@@ -196,7 +201,15 @@ function solveModel(model) {
 	solve.then(result => {
 		$loader.classList.add('hidden');
 		instancesRunning = 0;
-		const solution = result.solution.output.json;
+		let solution;
+		try {
+			solution = result.solution.output.json;
+		} catch (e) {
+			const $error = document.querySelector(".error");
+			$error.classList.remove('hidden');
+			$error.textContent = 'Insatisfactible';
+			throw new Error('Insatisfactible');
+		}
 		renderResults(solution);
 	});
 }

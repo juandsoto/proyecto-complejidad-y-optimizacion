@@ -97,6 +97,11 @@ form>button:hover {
 	background-color: #9b870c;
 }
 
+.error {
+	margin-top: 1rem;
+	color: crimson;
+}
+
 .title__section {
 	display: flex;
 	justify-content: space-between;
