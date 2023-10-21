@@ -7,7 +7,8 @@ CPN = 7;           % Costo de producción de la central nuclear
 CPT = 9;           % Costo de producción de la central térmica
 CPH = 5;           % Costo de producción de la central hidroeléctrica
 RM = 0.75;         % Porcentaje de requerimiento mínimo
-
+RA=3;
+PRA=0.7;
 P = [150, 220, 75, 100, 190, 175, 125, 60];  % Pagos de clientes
 
 % Matriz de demanda diaria

@@ -20,47 +20,53 @@
 			<form id="manual__form" class="form-container hidden" action="#" onsubmit="runModelWithForm(event)">
 				<div class="form__control">
 					<label for="CN" class="form-label">CN (Capacidad central nuclear):</label>
-					<input type="number" name="CN" id="CN" class="form-input" min="0" value="1000">
+					<input type="number" name="CN" id="CN" class="form-input" min="0" placeholder="1000">
 				</div>
 				<div class="form__control">
 					<label for="CT" class="form-label">CT (Capacidad central térmica):</label>
-					<input type="number" name="CT" id="CT" class="form-input" min="0" value="300">
+					<input type="number" name="CT" id="CT" class="form-input" min="0" placeholder="300">
 				</div>
 				<div class="form__control">
 					<label for="CH" class="form-label">CH (Capacidad central hidroeléctrica):</label>
-					<input type="number" name="CH" id="CH" class="form-input" min="0" value="500">
+					<input type="number" name="CH" id="CH" class="form-input" min="0" placeholder="500">
 				</div>
 				<div class="form__control">
 
 					<label for="m" class="form-label">m (Cantidad de clientes):</label>
-					<input type="number" name="m" id="m" class="form-input" min="0" value="3">
+					<input type="number" name="m" id="m" class="form-input" min="0" placeholder="3">
 				</div>
 				<div class="form__control">
 					<label for="n" class="form-label">n (Cantidad de dias):</label>
-					<input type="number" name="n" id="n" class="form-input" min="0" value="2">
+					<input type="number" name="n" id="n" class="form-input" min="0" placeholder="2">
 				</div>
 				<div class="form__control">
 					<label for="CPN" class="form-label">CPN (Costo de producción nuclear):</label>
-					<input type="number" name="CPN" id="CPN" class="form-input" min="0" value="4">
+					<input type="number" name="CPN" id="CPN" class="form-input" min="0" placeholder="4">
 				</div>
 				<div class="form__control">
 					<label for="CPT" class="form-label">CPT (Costo de producción térmica):</label>
-					<input type="number" name="CPT" id="CPT" class="form-input" min="0" value="2">
+					<input type="number" name="CPT" id="CPT" class="form-input" min="0" placeholder="2">
 				</div>
 				<div class="form__control">
 					<label for="CPH" class="form-label">CPH (Costo de producción hidroeléctrica):</label>
-					<input type="number" name="CPH" id="CPH" class="form-input" min="0" value="3">
+					<input type="number" name="CPH" id="CPH" class="form-input" min="0" placeholder="3">
 				</div>
 				<div class="form__control">
 					<label for="RM" class="form-label">RM (Requerimiento mínimo):</label>
-					<input type="number" step="0.01" name="RM" id="RM" class="form-input" min="0" max="1" value="0.5">
+					<input type="number" step="0.01" name="RM" id="RM" class="form-input" min="0" max="1" placeholder="0.5">
 				</div>
 				<div class="form__control">
 					<label for="P" class="form-label">P (Cobro de cliente por megawatt):</label>
-					<input type="text" name="P" id="P" class="form-input" min="0" value="15,25,20">
+					<input type="text" name="P" id="P" class="form-input" min="0" placeholder="15,25,20">
 				</div>
 				<div class="form__control span-full">
-					<label for="d" class="form-label">d (Demanda diaria):</label>
+					<div class="flex">
+						<label for="d" class="form-label">d (Demanda diaria):</label>
+						<div class="info">
+							<span class="info-icon">?</span>
+							<span class="info-content">tooltip</span>
+						</div>
+					</div>
 					<textarea name="d" id="d" class="form-textarea"></textarea>
 				</div>
 				<input type="submit" value="Enviar" class="button span-full">

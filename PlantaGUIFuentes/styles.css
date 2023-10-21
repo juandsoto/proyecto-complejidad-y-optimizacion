@@ -82,6 +82,45 @@ form>button:hover {
 	gap: 1rem;
 }
 
+.flex {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+}
+
+.info {
+	position: relative;
+	width: fit-content;
+}
+
+.info-icon {
+	display: inline-block;
+	position: relative;
+	cursor: pointer;
+	background-color: #0056b3;
+	color: #fff;
+	width: 1.2rem;
+	height: 1.2rem;
+	text-align: center;
+	border-radius: 50%;
+}
+
+.info-content {
+	display: none;
+	position: absolute;
+	padding: 5px;
+	background-color: #222222;
+	border-radius: 3px;
+	z-index: 99;
+	top: -30px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.info-icon:hover+.info-content {
+	display: block;
+}
+
 .results__container {
 	display: flex;
 	flex-direction: column;
