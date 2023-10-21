@@ -33,6 +33,7 @@ input[type=file]::file-selector-button {
 table {
 	border-collapse: collapse;
 	width: 100%;
+	margin-bottom: 1rem;
 }
 
 th,
@@ -82,6 +83,17 @@ form>button:hover {
 	gap: 1rem;
 }
 
+.download__button {
+	display: block;
+	width: fit-content;
+	text-decoration: none;
+	color: white;
+	padding: .5rem 1rem;
+	border: 1px solid #ccc;
+	margin-top: 2rem;
+	margin: 0 auto;
+}
+
 .flex {
 	display: flex;
 	gap: 1rem;
@@ -108,11 +120,13 @@ form>button:hover {
 .info-content {
 	display: none;
 	position: absolute;
-	padding: 5px;
-	background-color: #222222;
-	border-radius: 3px;
+	width: max-content;
+	text-align: center;
+	padding: 1rem;
+	background-color: #333333;
+	border-radius: 1rem;
 	z-index: 99;
-	top: -30px;
+	bottom: 100%;
 	left: 50%;
 	transform: translateX(-50%);
 }

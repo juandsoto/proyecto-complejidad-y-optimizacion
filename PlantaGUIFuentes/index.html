@@ -59,12 +59,27 @@
 					<label for="P" class="form-label">P (Cobro de cliente por megawatt):</label>
 					<input type="text" name="P" id="P" class="form-input" min="0" placeholder="15,25,20">
 				</div>
+				<div class="form__control">
+					<label for="RA" class="form-label">RA (Número de dias consecutivos de régimen alto):</label>
+					<input type="text" name="RA" id="RA" class="form-input" min="0" placeholder="2">
+				</div>
+				<div class="form__control">
+					<label for="PRA" class="form-label">PRA (Porcentaje considerado como régimen alto):</label>
+					<input type="text" name="PRA" id="PRA" class="form-input" min="0" max="1" placeholder="0.6">
+				</div>
 				<div class="form__control span-full">
 					<div class="flex">
 						<label for="d" class="form-label">d (Demanda diaria):</label>
 						<div class="info">
 							<span class="info-icon">?</span>
-							<span class="info-content">tooltip</span>
+							<div class="info-content">
+								<p>El formato para la demanda diaria es el siguiente</p>
+								<span>100,250,123</span><br />
+								<span>210,350,58</span><br />
+								<span>240,140,133</span><br />
+								<span>300,130,227</span><br />
+								<p>Donde hay tantas columnas como dias (n) y tantas filas como clientes (m)</p>
+							</div>
 						</div>
 					</div>
 					<textarea name="d" id="d" class="form-textarea"></textarea>
@@ -81,6 +96,7 @@
 			<div class="loader hidden">Cargando...</div>
 			<div class="error hidden"></div>
 			<div class="results__container"></div>
+			<div class="downloadData"></div>
 		</section>
 	</body>
 

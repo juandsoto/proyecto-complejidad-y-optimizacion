@@ -18,16 +18,18 @@ float: PRA; % minimo porcentaje que se considera como regimen alto
 array[1..n] of var int: PN; % producción de la central nuclear en un día i
 array[1..n] of var int: PT; % producción de la central termica en un día i
 array[1..n] of var int: PH; % producción de la central hidroelectrica en un día i
-array[1..n] of var bool: regimenAlto;
-array[1..n] of var bool: aplicarRM;
+array[1..n] of var bool: regimenAlto; % Arreglo booleano que indica en que dias la central hidroelectrica entra en regimen alto
 
 %Aux
 array[1..n] of var int: energia_diaria; % arreglo de la cantidad de energía total diaria(suma de todos los clientes)
-array[1..m, 1..n] of var float: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
+array[1..m, 1..n] of var int: d_aux; % matriz auxiliar de la demanda diaria; se modifica si no se satisface la demanda de un día i
 array[1..m] of var int: pagos;
 array[1..3] of var int: costo_central;
 array[1..3] of var int: capacidad_centrales;
 var float: RM_aux;
+var int: RA_aux;
+var float: PRA_aux;
+
 
 % Restricciones
 
@@ -58,28 +60,22 @@ constraint forall(i in 1..n)(PN[i] <= CN);
 constraint forall(i in 1..n)(PT[i] <= CT);
 constraint forall(i in 1..n)(PH[i] <= CH);
 
-%Mínimos de energia diarios
-
-constraint forall(i in 1..n)(
-  energia_diaria[i] = sum(s in 1..m)(d_aux[s,i])
-);
-
 constraint forall(i in 1..n)((PN[i]+PT[i]+PH[i]) = energia_diaria[i]);
 
 %Suplir la demanda diaria
 
+constraint forall(i in 1..n)(forall(s in 1..m)(d_aux[s,i] <= d[s,i]));
+  
+constraint forall(i in 1..n)(forall(s in 1..m)(d_aux[s,i] >= d[s,i]*RM));
+     
 constraint forall(i in 1..n)(
-  aplicarRM[i] = (energia_diaria[i] > (CN+CT+CH))
+  (CN+CT+CH) >= sum(s in 1..m)(d_aux[s,i]) 
 );
 
+%Mínimos de energia diarios
+
 constraint forall(i in 1..n)(
-  if sum(s in 1..m)(d[s,i]) <= (CN+CT+CH) then
-    forall(s in 1..m)(d_aux[s,i]=d[s,i])
-  elseif sum(s in 1..m)(d[s,i]*RM) <= (CN+CT+CH) then
-    forall(s in 1..m)(d_aux[s,i] = d[s,i]*RM) 
-  else
-    forall(s in 1..m)(d_aux[s,i] = -1) % se pone '-1' en la matriz si no es capaz de suplir la demanda
-  endif
+  energia_diaria[i] = sum(s in 1..m)(d_aux[s,i])
 );
 
 % Regimen alto
@@ -98,6 +94,8 @@ constraint forall(s in 1..m)(pagos[s] = P[s]);
 constraint costo_central = [CPN,CPT,CPH];
 constraint capacidad_centrales = [CN,CT,CH];
 constraint RM_aux = RM;
+constraint RA_aux = RA;
+constraint PRA_aux = PRA;
 
 % Objetivo
 
@@ -140,6 +138,10 @@ async function runModelWithForm(event) {
 	instancesRunning += 1;
 	const $results = document.querySelector(".results__container");
 	$results.innerHTML = null;
+	const $error = document.querySelector(".error");
+	$error.classList.add('hidden');
+	const $downloadButton = document.querySelector('.download__button');
+	if ($downloadButton) $downloadButton.remove();
 
 	const data = getFormData();
 
@@ -152,6 +154,7 @@ async function runModelWithForm(event) {
 		console.error(e);
 	}
 }
+
 async function runModel(event) {
 	event.preventDefault();
 
@@ -165,6 +168,8 @@ async function runModel(event) {
 	$results.innerHTML = null;
 	const $error = document.querySelector(".error");
 	$error.classList.add('hidden');
+	const $downloadButton = document.querySelector('.download__button');
+	if ($downloadButton) $downloadButton.remove();
 
 	const $fileInput = document.getElementById("form__input--file");
 	const data = await $fileInput.files[0].text();
@@ -243,7 +248,13 @@ function renderResults(data) {
 			<span><strong>CAPACIDADES: </strong></span><span id="capacidades"></span>
 		</div>
 		<div class="data__container">
-			<span><strong>REQUERIMIENTO MÍNIMO: </strong></span><span id="rm"></span>
+			<span><strong>PORCENTAJE REQUERIMIENTO MÍNIMO: </strong></span><span id="rm"></span>
+		</div>
+		<div class="data__container">
+			<span><strong>NÚMERO DE DIAS - RÉGIMEN ALTO: </strong></span><span id="ra"></span>
+		</div>
+		<div class="data__container">
+			<span><strong>PORCENTAJE RÉGIMEN ALTO: </strong></span><span id="pra"></span>
 		</div>
 		<h3>Tabla de demanda diaria</h3>
 		<table id="d_aux_table"></table>
@@ -378,13 +389,23 @@ function renderResults(data) {
 	totalEgresos.cells[0].textContent = "TOTAL EGRESOS";
 
 	const $ganancia = document.getElementById('ganancia');
-	$ganancia.textContent = data.ganancia;
+	$ganancia.textContent = new Intl.NumberFormat('es-CO', {
+		style: 'currency',
+		currency: 'COP',
+		maximumFractionDigits: 0
+	}).format(data.ganancia);
 
 	const $capacidades = document.getElementById('capacidades');
-	$capacidades.textContent = JSON.stringify(data.capacidad_centrales);
+	$capacidades.textContent = `[CN,CT,CH] = ${JSON.stringify(data.capacidad_centrales)}`;
 
 	const $rm = document.getElementById('rm');
 	$rm.textContent = JSON.stringify(data.RM_aux);
+
+	const $ra = document.getElementById('ra');
+	$ra.textContent = JSON.stringify(data.RA_aux);
+
+	const $pra = document.getElementById('pra');
+	$pra.textContent = JSON.stringify(data.PRA_aux);
 }
 
 function getFormData() {
@@ -397,6 +418,8 @@ function getFormData() {
 	const CPT = document.getElementById("CPT").value;
 	const CPH = document.getElementById("CPH").value;
 	const RM = document.getElementById("RM").value;
+	const RA = document.getElementById("RA").value;
+	const PRA = document.getElementById("PRA").value;
 	const P = document.getElementById("P").value;
 	const d = document.getElementById("d").value;
 
@@ -407,7 +430,34 @@ function getFormData() {
 	}
 	formatted += '];\n';
 
-	const dataString = `CN=${CN};\nCT=${CT};\nCH=${CH};\nm=${m};\nn=${n};\nCPN=${CPN};\nCPT=${CPT};\nCPH=${CPH};\nRM=${RM};\nP=[${P}];\n${formatted}`;
+	const dataString = `CN=${CN};\nCT=${CT};\nCH=${CH};\nm=${m};\nn=${n};\nCPN=${CPN};\nCPT=${CPT};\nCPH=${CPH};\nRM=${RM};\nRA=${RA};\nPRA=${PRA};\nP=[${P}];\n${formatted}`;
+
+	downloadDzn(dataString);
 
 	return dataString;
+}
+
+function downloadDzn(text) {
+	function generateRandomString(length) {
+		const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		let randomString = '';
+		for (let i = 0; i < length; i++) {
+			const randomIndex = Math.floor(Math.random() * characters.length);
+			randomString += characters.charAt(randomIndex);
+		}
+		return randomString;
+	}
+
+	const randomFileName = generateRandomString(Math.floor(Math.random() * 8) + 8);
+
+	const blob = new Blob([text], { type: "text/plain" });
+	const url = window.URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.classList.add('download__button');
+	a.href = url;
+	a.download = `${randomFileName}.dzn`;
+	a.textContent = 'Descargar datos';
+
+	const $downloadData = document.querySelector('.downloadData');
+	$downloadData.appendChild(a);
 }
