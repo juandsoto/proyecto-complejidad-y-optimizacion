@@ -1,3 +1,7 @@
+%Sara María Eraso Lasso (201924232)
+%Juan Sebastián Estupiñán Cifuentes (201924846)
+%Juan David Soto Carmona (201958813)
+
 % Lectura de Datos
 int: CN; % capacidad central nuclear
 int: CT; % capacidad central termica

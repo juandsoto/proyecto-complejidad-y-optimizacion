@@ -1,9 +1,9 @@
-CN = 200;          % Capacidad nuclear
-CT = 100;          % Capacidad térmica
+CN = 450;          % Capacidad nuclear
+CT = 2000;          % Capacidad térmica
 CH = 3210;         % Capacidad hidroeléctrica
 m = 8;             % Cantidad de clientes
 n = 8;             % Cantidad de días a planificar
-CPN = 9;           % Costo de producción de la central nuclear
+CPN = 11;           % Costo de producción de la central nuclear
 CPT = 8;           % Costo de producción de la central térmica
 CPH = 12;          % Costo de producción de la central hidroeléctrica
 RM = 0.6;          % Porcentaje de requerimiento mínimo
