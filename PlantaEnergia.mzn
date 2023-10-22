@@ -43,6 +43,9 @@ constraint assert(CH >= 0, "(CH): La capacidad de la central hidroeléctrica deb
 constraint assert(m >= 0, "(m): Debe haber por lo menos 1 cliente");
 constraint assert(n >= 0, "(n): Debe haber por lo menos 1 dia");
 constraint assert(RM >= 0, "(RM): El requerimiento mínimo debe ser un valor entre 0 y 1");
+constraint assert(CPN >= 0, "(CPN): El costo de producción de la central nuclear debe ser mayor a 0");
+constraint assert(CPT >= 0, "(CPT): El costo de producción de la central térmica debe ser mayor a 0");
+constraint assert(CPH >= 0, "(CPH): El costo de producción de la central hidroeléctrica debe ser mayor a 0");
 constraint assert(PRA >= 0, "(PRA): El porcentaje de regimen alto debe ser un valor entre 0 y 1");
 constraint assert(RA >= 2, "(RA): El numeros de dias consecutivos de regimen alto debe ser mayor a 2");
 
